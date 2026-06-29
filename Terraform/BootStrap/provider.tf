@@ -9,5 +9,5 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1" # Região comumente usada para Free Tier
+  region = "eu-north-1" 
 }
