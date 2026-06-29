@@ -25,6 +25,11 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "github_actions_admin" {
+  role       = aws_iam_role.github_actions_role.name # Coloque o nome da sua variável da role aqui
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
 # Inline Policy: Defines exact AWS permissions for the GitHub Actions pipeline
 resource "aws_iam_role_policy" "github_actions_permissions" {
   name = "github-actions-permissions-policy"
@@ -64,7 +69,11 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "ec2:DeleteNetworkInterface",
           "ec2:DescribeNetworkInterfaces",
           "ec2:DetachNetworkInterface",
-          "ec2:AttachNetworkInterface"
+          "ec2:AttachNetworkInterface",
+          "ec2:AllocateAddress",
+          "ec2:ReleaseAddress",
+          "ec2:AssociateAddress",
+          "ec2:DisassociateAddress"
         ]
       },
       {
@@ -168,10 +177,11 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "kms:DescribeKey",
           "kms:ScheduleKeyDeletion",
           "kms:CreateAlias",
-          "kms:DeleteAlias",               # Added: Required for full cryptographic alias cleanup
+          "kms:DeleteAlias",               
           "kms:RetireGrant",
-          "kms:CreateGrant",               # Added: Required for EKS cluster to access keys via nodes
-          "kms:ListGrants"                 # Added: Required to audit existing key grants
+          "kms:CreateGrant",               
+          "kms:ListGrants",              
+          "kms:ListAliases"
         ]
       }
     ]
