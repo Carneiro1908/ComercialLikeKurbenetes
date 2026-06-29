@@ -44,9 +44,10 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "ec2:*Route*",
           "ec2:*Address*",
           "ec2:*SecurityGroup*",
+          "ec2:*NetworkAcl*",
           "ec2:CreateTags",
           "ec2:DeleteTags",
-          "ec2:DeleteNetworkAclEntry" # Added: Required by aws_default_network_acl
+          "ec2:Describe*"
         ]
       },
       {
@@ -56,10 +57,14 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
         Action = [
           "ec2:RunInstances",
           "ec2:TerminateInstances",
-          "ec2:Describe*",
           "ec2:CreateKeyPair",
           "ec2:CreateLaunchTemplate",
-          "ec2:DeleteLaunchTemplate"
+          "ec2:DeleteLaunchTemplate",
+          "ec2:CreateNetworkInterface",
+          "ec2:DeleteNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DetachNetworkInterface",
+          "ec2:AttachNetworkInterface"
         ]
       },
       {
@@ -71,7 +76,7 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
         ]
       },
       {
-        Sid      = "IAMFullControlForEKS"
+        Sid      = "IAMFullControlForEKSAndOIDC"
         Effect   = "Allow"
         Resource = "*"
         Action = [
@@ -91,7 +96,13 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "iam:ListAttachedRolePolicies",
           "iam:TagRole",
           "iam:UntagRole",
-          "iam:TagPolicy"
+          "iam:TagPolicy",
+          "iam:ListPolicyVersions",
+          "iam:ListInstanceProfilesForRole",
+          "iam:CreateOpenIDConnectProvider", # Added: Required for EKS Service Accounts (IRSA)
+          "iam:DeleteOpenIDConnectProvider", # Added: Required for OIDC provider teardown
+          "iam:GetOpenIDConnectProvider",    # Added: Required to verify OIDC status
+          "iam:TagOpenIDConnectProvider"     # Added: Required to track OIDC resources
         ]
       },
       {
@@ -111,7 +122,7 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
       {
         Sid      = "DynamoDBLocking"
         Effect   = "Allow"
-        Resource = "arn:aws:dynamodb:*:*:table/comercial-k8s-terraform-locks"
+        Resource = "arn:aws:dynamodb:eu-north-1:*:table/comercial-k8s-terraform-locks"
         Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
@@ -129,7 +140,9 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "ecr:ListImages",
           "ecr:TagResource",
           "ecr:UntagResource",
-          "ecr:ListTagsForResource" # Added: Required for repository validation
+          "ecr:ListTagsForResource",
+          "ecr:SetRepositoryPolicy",       # Added: Required if managing container access policies
+          "ecr:GetRepositoryPolicy"        # Added: Required to inspect repository access
         ]
       },
       {
@@ -142,10 +155,9 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "logs:DescribeLogGroups",
           "logs:ListTagsForResource",
           "logs:TagResource",
-          "logs:PutRetentionPolicy" # Added: Required to cap log duration costs
+          "logs:PutRetentionPolicy"
         ]
       },
-      # NEW STATEMENT: Required by the EKS dynamic KMS key generator to protect Secrets
       {
         Sid      = "KMSKeyManagement"
         Effect   = "Allow"
@@ -154,7 +166,12 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "kms:CreateKey",
           "kms:TagResource",
           "kms:DescribeKey",
-          "kms:ScheduleKeyDeletion"
+          "kms:ScheduleKeyDeletion",
+          "kms:CreateAlias",
+          "kms:DeleteAlias",               # Added: Required for full cryptographic alias cleanup
+          "kms:RetireGrant",
+          "kms:CreateGrant",               # Added: Required for EKS cluster to access keys via nodes
+          "kms:ListGrants"                 # Added: Required to audit existing key grants
         ]
       }
     ]

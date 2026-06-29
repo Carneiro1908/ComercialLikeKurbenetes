@@ -1,4 +1,4 @@
-# 1.Creating VPC for EKS
+# 1. Creating VPC for EKS
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
@@ -15,11 +15,13 @@ module "vpc" {
   single_nat_gateway = true # We will use a single NAT Gateway to reduce costs, as this is a freetier account 
 
   public_subnet_tags = {
-    "kubernetes.io/role/elb" = 1
+    "kubernetes.io/cluster/eks-commercial-study" = "shared" # Required for EKS cluster subnet discovery
+    "kubernetes.io/role/elb"                      = 1
   }
 
   private_subnet_tags = {
-    "kubernetes.io/role/internal-elb" = 1
+    "kubernetes.io/cluster/eks-commercial-study" = "shared" # Required for EKS cluster subnet discovery
+    "kubernetes.io/role/internal-elb"             = 1
   }
 }
 
