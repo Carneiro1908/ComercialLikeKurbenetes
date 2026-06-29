@@ -25,7 +25,7 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-# Inline Policy: Defines WHAT the GitHub Actions pipeline can actually do
+# Inline Policy: Defines exact AWS permissions for the GitHub Actions pipeline
 resource "aws_iam_role_policy" "github_actions_permissions" {
   name = "github-actions-permissions-policy"
   role = aws_iam_role.github_actions_role.id
@@ -34,7 +34,7 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "VPCRoutingAndNetworkingPermissions"
+        Sid      = "NetworkingAndVPCPermissions"
         Effect   = "Allow"
         Resource = "*"
         Action = [
@@ -43,11 +43,14 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "ec2:*Gateway*",
           "ec2:*Route*",
           "ec2:*Address*",
-          "ec2:*SecurityGroup*"
+          "ec2:*SecurityGroup*",
+          "ec2:CreateTags",
+          "ec2:DeleteTags",
+          "ec2:DeleteNetworkAclEntry" # Added: Required by aws_default_network_acl
         ]
       },
       {
-        Sid      = "EC2InstancesAndTemplatesPermissions"
+        Sid      = "EC2AndLaunchTemplates"
         Effect   = "Allow"
         Resource = "*"
         Action = [
@@ -60,24 +63,15 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
         ]
       },
       {
-        Sid      = "EKSMiscellaneousAndClusterPermissions"
+        Sid      = "EKSPermissions"
         Effect   = "Allow"
         Resource = "*"
         Action = [
-          "eks:CreateCluster",
-          "eks:DeleteCluster",
-          "eks:DescribeCluster",
-          "eks:UpdateClusterConfig",
-          "eks:UpdateClusterVersion",
-          "eks:CreateNodegroup",
-          "eks:DeleteNodegroup",
-          "eks:DescribeNodegroup",
-          "eks:UpdateNodegroupConfig",
-          "eks:AccessKubernetesApi"
+          "eks:*"
         ]
       },
       {
-        Sid      = "IAMRolesRequiredForEKS"
+        Sid      = "IAMFullControlForEKS"
         Effect   = "Allow"
         Resource = "*"
         Action = [
@@ -88,31 +82,79 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "iam:DetachRolePolicy",
           "iam:PutRolePolicy",
           "iam:DeleteRolePolicy",
-          "iam:PassRole"
+          "iam:PassRole",
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:TagPolicy"
         ]
       },
       {
-        Sid      = "S3BucketPermissions"
-        Effect   = "Allow"
-        Resource = "*"
+        Sid    = "S3StateBackend"
+        Effect = "Allow"
         Action = [
-          "s3:CreateBucket",
-          "s3:DeleteBucket",
-          "s3:GetBucketLocation",
           "s3:ListBucket",
-          "s3:PutObject",
           "s3:GetObject",
+          "s3:PutObject",
           "s3:DeleteObject"
         ]
+        Resource = [
+          "arn:aws:s3:::comercial-k8s-protected-storage-tomas-2026",
+          "arn:aws:s3:::comercial-k8s-protected-storage-tomas-2026/*"
+        ]
       },
       {
-        Sid      = "DynamoDBTerraformLockingPermissions"
+        Sid      = "DynamoDBLocking"
         Effect   = "Allow"
         Resource = "arn:aws:dynamodb:*:*:table/comercial-k8s-terraform-locks"
         Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:DeleteItem"
+        ]
+      },
+      {
+        Sid      = "ECRManagement"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "ecr:CreateRepository",
+          "ecr:DeleteRepository",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:TagResource",
+          "ecr:UntagResource",
+          "ecr:ListTagsForResource" # Added: Required for repository validation
+        ]
+      },
+      {
+        Sid      = "CloudWatchLogsManagement"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:ListTagsForResource",
+          "logs:TagResource",
+          "logs:PutRetentionPolicy" # Added: Required to cap log duration costs
+        ]
+      },
+      # NEW STATEMENT: Required by the EKS dynamic KMS key generator to protect Secrets
+      {
+        Sid      = "KMSKeyManagement"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "kms:CreateKey",
+          "kms:TagResource",
+          "kms:DescribeKey",
+          "kms:ScheduleKeyDeletion"
         ]
       }
     ]
