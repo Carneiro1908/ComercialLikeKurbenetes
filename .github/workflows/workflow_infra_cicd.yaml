@@ -51,7 +51,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: arn:aws:iam::547320736290:role/github-actions-infra-role
-        aws-region: us-east-1
+        aws-region: eu-north-1
         audience: sts.amazonaws.com
 
     - name: Terraform Init
