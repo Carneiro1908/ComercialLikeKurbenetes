@@ -54,7 +54,7 @@ resource "aws_iam_policy" "ecr_push_pull" {
           "ecr:DescribeRepositories",
           "ecr:DescribeImages"
         ]
-        Resource = "arn:aws:ecr:<region>:<account_id>:repository/<ecr_repository_name>"
+        Resource = "arn:aws:ecr:eu-north-1:547320736290:repository/comercial-k8s-apps"
       }
     ]
   })
@@ -73,7 +73,7 @@ resource "aws_iam_policy" "eks_describe_access" {
           "eks:DescribeCluster",
           "eks:ListClusters"
         ]
-        Resource = "arn:aws:eks:<region>:<account_id>:cluster/<eks_cluster_name>"
+        Resource = "arn:aws:eks:eu-north-1:547320736290:cluster/comercial-k8s-eks-cluster"
       }
     ]
   })
