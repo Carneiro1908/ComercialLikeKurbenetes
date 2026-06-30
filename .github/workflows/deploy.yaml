@@ -56,6 +56,35 @@ jobs:
           kubectl apply -f manifests/deployment.yaml
           kubectl apply -f manifests/service.yaml
 
+      - name: Debug
+        run: |
+          kubectl get deployments
+          kubectl get pods
+          kubectl get services
+
       - name: Verify rollout
         run: |
           kubectl rollout status deployment/my-app --timeout=120s
+
+      - name: Verify rollout
+        id: verify-rollout
+        run: |
+          kubectl rollout status deployment/my-app --timeout=120s
+
+      - name: Debug Deployment Failure
+        if: failure() && steps.verify-rollout.outcome == 'failure'
+        run: |
+          echo "  Deployment failed! Starting automatic diagnostics..."
+          
+          echo -e "\n [1/3] PODS STATUS:"
+          kubectl get pods
+          
+          echo -e "\n [2/3] DEPLOYMENT DETAILS AND EVENTS:"
+          kubectl describe deployment/my-app
+          
+          echo -e "\n [3/3] RECENT EVENTS FROM FAILING PODS:"
+          # Fetches recent events to expose ImagePullBackOff or CrashLoopBackOff reasons
+          kubectl get events --sort-by='.metadata.creationTimestamp' | tail -n 20
+          
+          echo -e "\n [BONUS] LATEST CONTAINER LOGS (if any are running):"
+          kubectl logs deployment/my-app --all-containers=true --tail=30 || echo "Could not fetch container logs."
