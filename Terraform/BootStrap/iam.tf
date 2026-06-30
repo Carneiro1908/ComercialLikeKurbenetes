@@ -1,5 +1,5 @@
 # Creating role for CI/CD infrastructure using GitHub Actions
-resource "aws_iam_role" "github_actions_role" {
+resource "aws_iam_role" "github_actions_infra_role" {
   name = "github-actions-infra-role"
 
   # Trust Policy: Defines WHO can assume this role (GitHub OIDC)
@@ -25,15 +25,10 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "github_actions_admin" {
-  role       = aws_iam_role.github_actions_role.name # Coloque o nome da sua variável da role aqui
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
-}
-
 # Inline Policy: Defines exact AWS permissions for the GitHub Actions pipeline
 resource "aws_iam_role_policy" "github_actions_permissions" {
   name = "github-actions-permissions-policy"
-  role = aws_iam_role.github_actions_role.id
+  role = aws_iam_role.github_actions_infra_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -189,7 +184,7 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
 }
 
 # ARN Output to use on the role 
-output "github_actions_role_arn" {
-  value       = aws_iam_role.github_actions_role.arn
+output "github_actions_infra_role_arn" {
+  value       = aws_iam_role.github_actions_infra_role.arn
   description = "ARN of the IAM role for GitHub Actions to assume"
 }
