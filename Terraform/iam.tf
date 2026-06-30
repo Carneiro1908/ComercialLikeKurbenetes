@@ -73,7 +73,7 @@ resource "aws_iam_policy" "eks_describe_access" {
           "eks:DescribeCluster",
           "eks:ListClusters"
         ]
-        Resource = "arn:aws:eks:eu-north-1:547320736290:cluster/comercial-k8s-eks-cluster"
+        Resource = "arn:aws:eks:eu-north-1:547320736290:cluster/eks-commercial-study"
       }
     ]
   })
