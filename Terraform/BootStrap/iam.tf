@@ -121,7 +121,17 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "s3:GetBucketVersioning",         
           "s3:GetEncryptionConfiguration",  
           "s3:GetBucketPublicAccessBlock",  
-          "s3:GetBucketPolicy"  
+          "s3:GetBucketPolicy", 
+          "s3:GetBucketAcl",
+          "s3:GetBucketCORS",                  
+          "s3:GetBucketLogging",               
+          "s3:GetBucketObjectLockConfiguration",
+          "s3:GetBucketRequestPayment",       
+          "s3:GetBucketTagging",               
+          "s3:GetBucketWebsite",               
+          "s3:GetLifecycleConfiguration",     
+          "s3:GetReplicationConfiguration",    
+          "s3:GetAccelerateConfiguration"
         ]
         Resource = [
           "arn:aws:s3:::comercial-k8s-protected-storage-tomas-2026",
@@ -136,8 +146,31 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:DeleteItem",
-          "dynamodb:DescribeTable" 
+          "dynamodb:DescribeTable",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:DescribeTimeToLive",     
+          "dynamodb:ListTagsOfResource",        
+          "dynamodb:DescribeKinesisStreamingDestination", 
+          "dynamodb:DescribeTableReplicaAutoScaling"
         ]
+      },
+      {
+        Sid      = "ServiceLinkedRoles"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "iam:CreateServiceLinkedRole"
+        ]
+        Condition = {
+          StringEquals = {
+            "iam:AWSServiceName" = [
+              "eks.amazonaws.com",
+              "eks-nodegroup.amazonaws.com",
+              "elasticloadbalancing.amazonaws.com",
+              "autoscaling.amazonaws.com"
+            ]
+          }
+        }
       },
       {
         Sid      = "ECRManagement"
@@ -155,7 +188,9 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "ecr:GetRepositoryPolicy",        
           "ecr:PutLifecyclePolicy",      
           "ecr:GetLifecyclePolicy",      
-          "ecr:DeleteLifecyclePolicy"
+          "ecr:DeleteLifecyclePolicy",
+          "ecr:PutImageScanningConfiguration",
+          "ecr:PutImageTagMutability"
         ]
       },
       {
