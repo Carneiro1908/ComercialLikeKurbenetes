@@ -107,7 +107,15 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "iam:CreateOpenIDConnectProvider", 
           "iam:DeleteOpenIDConnectProvider", 
           "iam:GetOpenIDConnectProvider",   
-          "iam:TagOpenIDConnectProvider"    
+          "iam:TagOpenIDConnectProvider",
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:CreatePolicyVersion",
+          "iam:DeletePolicyVersion",
+          "iam:SetDefaultPolicyVersion"
         ]
       },
       {
