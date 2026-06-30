@@ -90,8 +90,23 @@ resource "aws_iam_role_policy_attachment" "attach_eks_describe_access" {
 }
 
 
-# ARN Output to use on the role 
-output "github_actions_cicd_role_arn" {
-  value       = aws_iam_role.github_actions_cicd_role.arn
-  description = "ARN of the IAM role for GitHub Actions to assume"
+# EKS rules
+
+# Create an access entry for the GitHub Actions role in the EKS cluster
+resource "aws_eks_access_entry" "github_actions" {
+  cluster_name  = "eks-commercial-study" 
+  principal_arn = "arn:aws:iam::547320736290:role/github-actions-cicd-role"
+  type          = "STANDARD"
 }
+
+# Associate the AmazonEKSClusterAdminPolicy with the GitHub Actions role for full admin access to the EKS cluster
+resource "aws_eks_access_policy_association" "github_actions_admin" {
+  cluster_name  = "eks-commercial-study"  
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = "arn:aws:iam::547320736290:role/github-actions-cicd-role"
+
+  access_scope {
+    type = "cluster"
+  }
+}
+
