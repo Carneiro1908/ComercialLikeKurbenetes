@@ -25,10 +25,10 @@ resource "aws_iam_role" "github_actions_infra_role" {
   })
 }
 
-# Inline Policy: Defines exact AWS permissions for the GitHub Actions pipeline
-resource "aws_iam_role_policy" "github_actions_permissions" {
-  name = "github-actions-permissions-policy"
-  role = aws_iam_role.github_actions_infra_role.id
+# Network and compute permissions for VPC, subnets, gateways, routing, security groups, and basic EC2 provisioning tasks.
+resource "aws_iam_policy" "github_actions_networking_policy" {
+  name        = "github-actions-networking-policy"
+  description = "Permissions for VPC, networking, and EC2 provisioning tasks"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -70,15 +70,56 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "ec2:AssociateAddress",
           "ec2:DisassociateAddress"
         ]
-      },
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_networking_attachment" {
+  role       = aws_iam_role.github_actions_infra_role.name
+  policy_arn = aws_iam_policy.github_actions_networking_policy.arn
+}
+
+# EKS cluster management permissions for creating and managing Kubernetes infrastructure.
+resource "aws_iam_policy" "github_actions_eks_policy" {
+  name        = "github-actions-eks-policy"
+  description = "Permissions for EKS cluster and node group operations"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
         Sid      = "EKSPermissions"
         Effect   = "Allow"
         Resource = "*"
-        Action = [
-          "eks:*"
-        ]
+        Action   = ["eks:*"]
       },
+      {
+        Sid      = "EKSClusterRead"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "eks:DescribeCluster",
+          "eks:ListClusters"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_eks_attachment" {
+  role       = aws_iam_role.github_actions_infra_role.name
+  policy_arn = aws_iam_policy.github_actions_eks_policy.arn
+}
+
+# IAM and OIDC permissions for creating roles, policies, and GitHub/OIDC providers used by the infrastructure stack.
+resource "aws_iam_policy" "github_actions_iam_policy" {
+  name        = "github-actions-iam-policy"
+  description = "Permissions for IAM role, policy, and OIDC provider management"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
         Sid      = "IAMFullControlForEKSAndOIDC"
         Effect   = "Allow"
@@ -104,20 +145,82 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "iam:TagPolicy",
           "iam:ListPolicyVersions",
           "iam:ListInstanceProfilesForRole",
-          "iam:CreateOpenIDConnectProvider", 
-          "iam:DeleteOpenIDConnectProvider", 
-          "iam:GetOpenIDConnectProvider",   
+          "iam:CreateOpenIDConnectProvider",
+          "iam:DeleteOpenIDConnectProvider",
+          "iam:GetOpenIDConnectProvider",
           "iam:TagOpenIDConnectProvider",
-          "iam:CreatePolicy",
-          "iam:DeletePolicy",
-          "iam:GetPolicy",
-          "iam:GetPolicyVersion",
-          "iam:ListPolicyVersions",
           "iam:CreatePolicyVersion",
           "iam:DeletePolicyVersion",
           "iam:SetDefaultPolicyVersion"
         ]
       },
+      {
+        Sid      = "IAMRolesForIRSAAndGrafana"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:GetRole",
+          "iam:UpdateAssumeRolePolicy",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:ListAttachedRolePolicies",
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:TagPolicy",
+          "iam:PassRole"
+        ]
+      },
+      {
+        Sid      = "IAMOIDCProviderRead"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "iam:GetOpenIDConnectProvider",
+          "iam:ListOpenIDConnectProviders",
+          "iam:CreateOpenIDConnectProvider",
+          "iam:TagOpenIDConnectProvider"
+        ]
+      },
+      {
+        Sid      = "ServiceLinkedRoles"
+        Effect   = "Allow"
+        Resource = "*"
+        Action   = ["iam:CreateServiceLinkedRole"]
+        Condition = {
+          StringEquals = {
+            "iam:AWSServiceName" = [
+              "eks.amazonaws.com",
+              "eks-nodegroup.amazonaws.com",
+              "elasticloadbalancing.amazonaws.com",
+              "autoscaling.amazonaws.com"
+            ]
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_iam_attachment" {
+  role       = aws_iam_role.github_actions_infra_role.name
+  policy_arn = aws_iam_policy.github_actions_iam_policy.arn
+}
+
+# Terraform state backend and locking permissions for S3 and DynamoDB operations.
+resource "aws_iam_policy" "github_actions_state_policy" {
+  name        = "github-actions-state-policy"
+  description = "Permissions for Terraform state storage and locking"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
         Sid    = "S3StateBackend"
         Effect = "Allow"
@@ -126,19 +229,19 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "s3:GetObject",
           "s3:PutObject",
           "s3:DeleteObject",
-          "s3:GetBucketVersioning",         
-          "s3:GetEncryptionConfiguration",  
-          "s3:GetBucketPublicAccessBlock",  
-          "s3:GetBucketPolicy", 
+          "s3:GetBucketVersioning",
+          "s3:GetEncryptionConfiguration",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:GetBucketPolicy",
           "s3:GetBucketAcl",
-          "s3:GetBucketCORS",                  
-          "s3:GetBucketLogging",               
+          "s3:GetBucketCORS",
+          "s3:GetBucketLogging",
           "s3:GetBucketObjectLockConfiguration",
-          "s3:GetBucketRequestPayment",       
-          "s3:GetBucketTagging",               
-          "s3:GetBucketWebsite",               
-          "s3:GetLifecycleConfiguration",     
-          "s3:GetReplicationConfiguration",    
+          "s3:GetBucketRequestPayment",
+          "s3:GetBucketTagging",
+          "s3:GetBucketWebsite",
+          "s3:GetLifecycleConfiguration",
+          "s3:GetReplicationConfiguration",
           "s3:GetAccelerateConfiguration"
         ]
         Resource = [
@@ -156,30 +259,29 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "dynamodb:DeleteItem",
           "dynamodb:DescribeTable",
           "dynamodb:DescribeContinuousBackups",
-          "dynamodb:DescribeTimeToLive",     
-          "dynamodb:ListTagsOfResource",        
-          "dynamodb:DescribeKinesisStreamingDestination", 
+          "dynamodb:DescribeTimeToLive",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:DescribeKinesisStreamingDestination",
           "dynamodb:DescribeTableReplicaAutoScaling"
         ]
-      },
-      {
-        Sid      = "ServiceLinkedRoles"
-        Effect   = "Allow"
-        Resource = "*"
-        Action = [
-          "iam:CreateServiceLinkedRole"
-        ]
-        Condition = {
-          StringEquals = {
-            "iam:AWSServiceName" = [
-              "eks.amazonaws.com",
-              "eks-nodegroup.amazonaws.com",
-              "elasticloadbalancing.amazonaws.com",
-              "autoscaling.amazonaws.com"
-            ]
-          }
-        }
-      },
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_state_attachment" {
+  role       = aws_iam_role.github_actions_infra_role.name
+  policy_arn = aws_iam_policy.github_actions_state_policy.arn
+}
+
+# Container registry, logging, and encryption permissions for images, log groups, and KMS keys.
+resource "aws_iam_policy" "github_actions_container_policy" {
+  name        = "github-actions-container-policy"
+  description = "Permissions for ECR, CloudWatch Logs, and KMS operations"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
         Sid      = "ECRManagement"
         Effect   = "Allow"
@@ -192,13 +294,24 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "ecr:TagResource",
           "ecr:UntagResource",
           "ecr:ListTagsForResource",
-          "ecr:SetRepositoryPolicy",      
-          "ecr:GetRepositoryPolicy",        
-          "ecr:PutLifecyclePolicy",      
-          "ecr:GetLifecyclePolicy",      
+          "ecr:SetRepositoryPolicy",
+          "ecr:GetRepositoryPolicy",
+          "ecr:PutLifecyclePolicy",
+          "ecr:GetLifecyclePolicy",
           "ecr:DeleteLifecyclePolicy",
           "ecr:PutImageScanningConfiguration",
           "ecr:PutImageTagMutability"
+        ]
+      },
+      {
+        Sid      = "ECRForceDelete"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "ecr:ListImages",
+          "ecr:BatchDeleteImage",
+          "ecr:DeleteRepository",
+          "ecr:DescribeRepositories"
         ]
       },
       {
@@ -224,13 +337,30 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "kms:DescribeKey",
           "kms:ScheduleKeyDeletion",
           "kms:CreateAlias",
-          "kms:DeleteAlias",               
+          "kms:DeleteAlias",
           "kms:RetireGrant",
-          "kms:CreateGrant",               
-          "kms:ListGrants",              
+          "kms:CreateGrant",
+          "kms:ListGrants",
           "kms:ListAliases"
         ]
-      },
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_container_attachment" {
+  role       = aws_iam_role.github_actions_infra_role.name
+  policy_arn = aws_iam_policy.github_actions_container_policy.arn
+}
+
+# Monitoring and observability permissions for AMP, Alert Manager, and Grafana workspaces.
+resource "aws_iam_policy" "github_actions_observability_policy" {
+  name        = "github-actions-observability-policy"
+  description = "Permissions for AMP and Grafana workspace management"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
         Sid      = "AMPWorkspaceManagement"
         Effect   = "Allow"
@@ -279,41 +409,24 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "grafana:UpdatePermissions",
           "grafana:DescribePermissions"
         ]
-      },
-      {
-        Sid      = "IAMRolesForIRSAAndGrafana"
-        Effect   = "Allow"
-        Resource = "*"
-        Action = [
-          "iam:CreateRole",
-          "iam:DeleteRole",
-          "iam:GetRole",
-          "iam:UpdateAssumeRolePolicy",
-          "iam:TagRole",
-          "iam:UntagRole",
-          "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy",
-          "iam:ListAttachedRolePolicies",
-          "iam:CreatePolicy",
-          "iam:DeletePolicy",
-          "iam:GetPolicy",
-          "iam:GetPolicyVersion",
-          "iam:ListPolicyVersions",
-          "iam:TagPolicy",
-          "iam:PassRole"
-        ]
-      },
-      {
-        Sid      = "IAMOIDCProviderRead"
-        Effect   = "Allow"
-        Resource = "*"
-        Action = [
-          "iam:GetOpenIDConnectProvider",
-          "iam:ListOpenIDConnectProviders",
-          "iam:CreateOpenIDConnectProvider",
-          "iam:TagOpenIDConnectProvider"
-        ]
-      },
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_observability_attachment" {
+  role       = aws_iam_role.github_actions_infra_role.name
+  policy_arn = aws_iam_policy.github_actions_observability_policy.arn
+}
+
+# Cleanup permissions for temporary network resources, load balancers, and identity center lookups.
+resource "aws_iam_policy" "github_actions_cleanup_policy" {
+  name        = "github-actions-cleanup-policy"
+  description = "Permissions for cleanup activities after infrastructure teardown"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
         Sid      = "IdentityCenterUserLookup"
         Effect   = "Allow"
@@ -324,26 +437,6 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "identitystore:GetUserId",
           "identitystore:DescribeUser",
           "identitystore:ListUsers"
-        ]
-      },
-      {
-        Sid      = "EKSClusterRead"
-        Effect   = "Allow"
-        Resource = "*"
-        Action = [
-          "eks:DescribeCluster",
-          "eks:ListClusters"
-        ]
-      },
-      {
-        Sid      = "ECRForceDelete"
-        Effect   = "Allow"
-        Resource = "*"
-        Action = [
-          "ecr:ListImages",
-          "ecr:BatchDeleteImage",
-          "ecr:DeleteRepository",
-          "ecr:DescribeRepositories"
         ]
       },
       {
@@ -374,6 +467,11 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
       }
     ]
   })
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_cleanup_attachment" {
+  role       = aws_iam_role.github_actions_infra_role.name
+  policy_arn = aws_iam_policy.github_actions_cleanup_policy.arn
 }
 
 # ARN Output to use on the role 
