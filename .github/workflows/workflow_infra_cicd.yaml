@@ -82,14 +82,18 @@ jobs:
 
         CLUSTER_NAME="eks-commercial-study"
 
-        aws eks update-kubeconfig --name "$CLUSTER_NAME" --region eu-north-1
+        if aws eks describe-cluster --name "$CLUSTER_NAME" --region eu-north-1 >/dev/null 2>&1; then
+          echo "Cluster encontrado. Limpando LoadBalancers/Ingress antes do destroy..."
+          aws eks update-kubeconfig --name "$CLUSTER_NAME" --region eu-north-1
+          kubectl get nodes
 
-        kubectl get nodes
+          kubectl delete svc --all-namespaces --field-selector spec.type=LoadBalancer --all --wait=true
+          kubectl delete ingress --all --all-namespaces --wait=true
 
-        kubectl delete svc --all-namespaces --field-selector spec.type=LoadBalancer --all --wait=true
-        kubectl delete ingress --all --all-namespaces --wait=true
-
-        echo "Waiting for Load Balancers to be deleted..."
-        sleep 120
+          echo "Aguardando propagação da remoção dos Load Balancers..."
+          sleep 60
+        else
+          echo "Cluster '$CLUSTER_NAME' não encontrado — pulando limpeza do Kubernetes (provavelmente já foi deletado em uma execução anterior)."
+        fi
 
         terraform destroy -auto-approve -input=false
