@@ -110,3 +110,31 @@ resource "aws_eks_access_policy_association" "github_actions_admin" {
   }
 }
 
+# AMP rules
+data "aws_iam_policy_document" "amp_irsa_assume" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [module.eks.oidc_provider_arn] 
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${module.eks.oidc_provider}:sub"
+      values   = ["system:serviceaccount:prometheus:amp-ingest"]
+    }
+  }
+}
+
+resource "aws_iam_role" "amp_ingest" {
+  name               = "amp-ingest-role"
+  assume_role_policy = data.aws_iam_policy_document.amp_irsa_assume.json
+}
+
+resource "aws_iam_role_policy_attachment" "amp_ingest" {
+  role       = aws_iam_role.amp_ingest.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonPrometheusRemoteWriteAccess"
+}

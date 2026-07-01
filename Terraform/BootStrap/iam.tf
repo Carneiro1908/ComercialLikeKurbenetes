@@ -230,6 +230,110 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "kms:ListGrants",              
           "kms:ListAliases"
         ]
+      },
+      {
+        Sid      = "AMPWorkspaceManagement"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "aps:CreateWorkspace",
+          "aps:DescribeWorkspace",
+          "aps:ListWorkspaces",
+          "aps:UpdateWorkspaceAlias",
+          "aps:DeleteWorkspace",
+          "aps:TagResource",
+          "aps:UntagResource",
+          "aps:ListTagsForResource"
+        ]
+      },
+      {
+        Sid      = "AMPRulesAndAlerting"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "aps:CreateRuleGroupsNamespace",
+          "aps:DescribeRuleGroupsNamespace",
+          "aps:PutRuleGroupsNamespace",
+          "aps:DeleteRuleGroupsNamespace",
+          "aps:CreateAlertManagerDefinition",
+          "aps:DescribeAlertManagerDefinition",
+          "aps:PutAlertManagerDefinition",
+          "aps:DeleteAlertManagerDefinition"
+        ]
+      },
+      {
+        Sid      = "GrafanaWorkspaceManagement"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "grafana:CreateWorkspace",
+          "grafana:DescribeWorkspace",
+          "grafana:UpdateWorkspace",
+          "grafana:DeleteWorkspace",
+          "grafana:ListWorkspaces",
+          "grafana:TagResource",
+          "grafana:UntagResource",
+          "grafana:ListTagsForResource",
+          "grafana:DescribeWorkspaceAuthentication",
+          "grafana:UpdateWorkspaceAuthentication",
+          "grafana:UpdatePermissions",
+          "grafana:DescribePermissions"
+        ]
+      },
+      {
+        Sid      = "IAMRolesForIRSAAndGrafana"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:GetRole",
+          "iam:UpdateAssumeRolePolicy",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:ListAttachedRolePolicies",
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:TagPolicy",
+          "iam:PassRole"
+        ]
+      },
+      {
+        Sid      = "IAMOIDCProviderRead"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "iam:GetOpenIDConnectProvider",
+          "iam:ListOpenIDConnectProviders",
+          "iam:CreateOpenIDConnectProvider",
+          "iam:TagOpenIDConnectProvider"
+        ]
+      },
+      {
+        Sid      = "IdentityCenterUserLookup"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "sso:ListInstances",
+          "sso:DescribeInstance",
+          "identitystore:GetUserId",
+          "identitystore:DescribeUser",
+          "identitystore:ListUsers"
+        ]
+      },
+      {
+        Sid      = "EKSClusterRead"
+        Effect   = "Allow"
+        Resource = "*"
+        Action = [
+          "eks:DescribeCluster",
+          "eks:ListClusters"
+        ]
       }
     ]
   })
