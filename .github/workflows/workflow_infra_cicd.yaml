@@ -85,12 +85,4 @@ jobs:
       - name: Clean up Kubernetes LoadBalancers before destroy
         if: ${{ github.event.inputs.run_destroy == 'true' }}
         run: |
-          if aws eks describe-cluster --name "$CLUSTER_NAME" --region "$AWS_REGION" >/dev/null 2>&1; then
-            echo "Cluster found. Cleaning up LoadBalancer services before destroy..."
-            aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$AWS_REGION"
-            kubectl get nodes
-
-            kubectl delete svc --all-namespaces --field-selector spec.type=LoadBalancer --all --wait=true
-            kubectl delete ingress --all --all-namespaces --wait=true
-
-            echo "Waiting for AWS to finish releasing Load
+          terraform destroy --auto-approve -input=false 
