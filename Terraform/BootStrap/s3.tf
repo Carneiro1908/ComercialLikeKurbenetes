@@ -13,24 +13,30 @@ resource "aws_s3_bucket" "protected_bucket" {
 }
 
 # Block all public access
+
 resource "aws_s3_bucket_public_access_block" "block_public_access" {
   bucket = aws_s3_bucket.protected_bucket.id
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
+  block_public_acls = true
+  block_public_policy = true
+  ignore_public_acls = true
   restrict_public_buckets = true
 }
 
+
 # Enable versioning
+
 resource "aws_s3_bucket_versioning" "bucket_versioning" {
   bucket = aws_s3_bucket.protected_bucket.id
+
   versioning_configuration {
-    status = "Enabled"
+  status = "Enabled"
   }
 }
 
+
 # 2. CHANGED: Switched to AES256 for instant creation without KMS API dependencies
+
 resource "aws_s3_bucket_server_side_encryption_configuration" "bucket_encryption" {
   bucket = aws_s3_bucket.protected_bucket.id
 
@@ -39,4 +45,4 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "bucket_encryption
       sse_algorithm = "AES256"
     }
   }
-}
+} 
