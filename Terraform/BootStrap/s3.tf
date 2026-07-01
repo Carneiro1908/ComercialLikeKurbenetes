@@ -3,6 +3,8 @@ resource "aws_s3_bucket" "protected_bucket" {
   # 1. CHANGED: Added a unique suffix to avoid global naming conflicts
   bucket = "comercial-k8s-protected-storage-tomas-2026"
 
+  force_destroy = true
+  
   tags = {
     Name        = "Protected Infrastructure Storage"
     Environment = "Production"
