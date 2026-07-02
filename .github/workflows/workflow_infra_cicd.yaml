@@ -76,7 +76,11 @@ jobs:
         if: ${{ github.event.inputs.run_apply == 'true' }}
         run: |
           terraform apply -auto-approve -input=false
-          kubectl get svc -n prometheus kube-prometheus-stack-grafana
+          
+          sleep 120
+
+          aws eks update-kubeconfig --name eks-commercial-study --region eu-central-1
+          kubectl get svc -n prometheus
 
       # 3. Runs if "Execute: Terraform Plan Destroy" checkbox is checked
       - name: Terraform Plan Destroy
