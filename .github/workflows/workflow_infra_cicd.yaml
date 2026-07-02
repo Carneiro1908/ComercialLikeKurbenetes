@@ -74,7 +74,9 @@ jobs:
       # 2. Runs if "Execute: Terraform Apply" checkbox is checked
       - name: Terraform Apply
         if: ${{ github.event.inputs.run_apply == 'true' }}
-        run: terraform apply -auto-approve -input=false
+        run: |
+          terraform apply -auto-approve -input=false
+          kubectl get svc -n prometheus kube-prometheus-stack-grafana
 
       # 3. Runs if "Execute: Terraform Plan Destroy" checkbox is checked
       - name: Terraform Plan Destroy

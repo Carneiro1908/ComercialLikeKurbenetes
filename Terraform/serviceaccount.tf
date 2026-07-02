@@ -56,4 +56,10 @@ resource "helm_release" "kube_prometheus_stack" {
   ]
 
   depends_on = [kubernetes_namespace_v1.prometheus]
+
+
+  set {
+    name  = "grafana.service.type"
+    value = "LoadBalancer"
+  }
 }
