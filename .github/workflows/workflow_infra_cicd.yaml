@@ -85,4 +85,4 @@ jobs:
       - name: Clean up Kubernetes LoadBalancers before destroy
         if: ${{ github.event.inputs.run_destroy == 'true' }}
         run: |
-          terraform destroy --auto-approve -input=false 
+          terraform destroy --auto-approve -input=false
