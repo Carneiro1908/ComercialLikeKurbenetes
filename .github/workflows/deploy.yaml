@@ -11,7 +11,7 @@ env:
   IMAGE_TAG: ${{ github.sha }}
 
 permissions:
-  id-token: write   # necessário para autenticação OIDC
+  id-token: write
   contents: read
 
 jobs:
@@ -73,9 +73,10 @@ jobs:
           kubectl logs deployment/my-app --all-containers=true --tail=50 || echo "No active or historical logs could be pulled yet."
 
       - name: Verify rollout
-        id: verify_out  
+        id: verify_out
         run: |
           kubectl rollout status deployment/my-app --timeout=300s
+          kubectl wait --for=condition=available deployment/my-app --timeout=300s
 
       - name: Get Web App Public URL
         run: |

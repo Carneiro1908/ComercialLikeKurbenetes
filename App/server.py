@@ -50,6 +50,10 @@ async def metrics_middleware(request: Request, call_next):
 def metrics() -> Response:
     return Response(generate_latest(METRICS_REGISTRY), media_type=CONTENT_TYPE_LATEST)
 
+@app.get("/healthz")
+def healthz() -> dict:
+    return {"status": "ok"}
+
 # Enable CORS for development flexibility
 app.add_middleware(
     CORSMiddleware,
@@ -203,5 +207,4 @@ else:
 if __name__ == "__main__":
     import uvicorn
     PORT = int(os.environ.get("PORT", 8000))
-    # In production, use workers and avoid reload=True
-    uvicorn.run("server:app", host="0.0.0.0", port=PORT, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=PORT, reload=False)

@@ -7,26 +7,31 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8000 \
     APP_DIR=/app
 
-# Set workspace directory
+# Set the working directory
 WORKDIR ${APP_DIR}
 
-# Install essential system dependencies (for building psycopg2 if necessary)
+# Install essential system dependencies for database drivers
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy python dependencies list and install them
+# Create a non-root user and prepare the application directory
+RUN groupadd --system --gid 1000 app && useradd --system --uid 1000 --gid 1000 appuser \
+    && chown -R appuser:app /app
+
+# Copy Python dependencies and install them
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code and frontend static directories
+# Copy application source and frontend assets
 COPY database.py .
 COPY server.py .
 COPY public/ ./public/
 
-# Expose server port
+# Expose the application port
 EXPOSE ${PORT}
 
-# Run the FastAPI server using Uvicorn
+# Run the FastAPI service as a non-root user
+USER appuser
 CMD ["python", "server.py"]

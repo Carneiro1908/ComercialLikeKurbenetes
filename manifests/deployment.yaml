@@ -14,15 +14,27 @@ spec:
       labels:
         app: my-app
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
         - name: my-app
-          # Image is overwritten by the CI/CD pipeline (sed command in workflow.yaml)
-          image: 547320736290.dkr.ecr.eu-central-1.amazonaws.com/my-app:latest
+          image: 547320736290.dkr.ecr.eu-central-1.amazonaws.com/comercial-k8s-apps:latest
+          imagePullPolicy: Always
           ports:
-            - containerPort: 8000 # 
+            - containerPort: 8000
           env:
             - name: NODE_ENV
               value: "production"
+            - name: PORT
+              value: "8000"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               cpu: "100m"
@@ -32,13 +44,13 @@ spec:
               memory: "256Mi"
           livenessProbe:
             httpGet:
-              path: /
-              port: 8000 # 
-            initialDelaySeconds: 15
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 20
             periodSeconds: 20
           readinessProbe:
             httpGet:
-              path: /
-              port: 8000 # 
+              path: /healthz
+              port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10

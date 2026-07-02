@@ -4,6 +4,8 @@ metadata:
   name: my-app
   labels:
     app: my-app
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 spec:
   selector:
     app: my-app
